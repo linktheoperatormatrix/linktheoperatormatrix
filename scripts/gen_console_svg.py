@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Генерирует assets/console.svg — операторская «Навуходоносора»:
-анимированный цифровой дождь (CSS внутри SVG) + терминал оператора."""
+анимированный цифровой дождь (CSS внутри SVG) + терминал оператора.
+Текст терминала двуязычный: <switch> + systemLanguage выбирает язык
+по настройкам браузера посетителя (ru — русский, остальным — английский)."""
 import random
 from pathlib import Path
 
@@ -29,24 +31,38 @@ for c in range(COLS):
         f'x="{x}" y="{-n * step}">{tspans}</text>'
     )
 
-TERMINAL = [
+
+def terminal_group(lines, last_color="#00FF41"):
+    """lines: список кортежей (часть_подсказки, часть_ответа, цвет)."""
+    out = []
+    for i, (left, right, color) in enumerate(lines):
+        if right:
+            body = f'<tspan fill="#00FF41">{left}</tspan><tspan fill="{color}">{right}</tspan>'
+        else:
+            body = f'<tspan fill="{color}">{left}</tspan>'
+        if i == len(lines) - 1:
+            body += f'<tspan class="cur" fill="{last_color}"> ▌</tspan>'
+        out.append(f'<text class="term" x="44" y="{62 + i * 29}">{body}</text>')
+    return "".join(out)
+
+
+TERMINAL_RU = [
     ("link@nebuchadnezzar:~$", " ./operator --connect", "#C9D1D9"),
     ("&gt; судно:", " Nebuchadnezzar — Mark III, № 11", "#00FF41"),
     ("&gt; uplink:", " Zion · связь устойчива", "#00FF41"),
     ("&gt; the matrix has you", "", "#00FF41"),
     ("&gt; следуй за белым кроликом 🐇", "", "#00FF41"),
 ]
-term_lines = []
-for i, (left, right, color) in enumerate(TERMINAL):
-    if i == 0:
-        body = f'<tspan fill="#00FF41">{left}</tspan><tspan fill="{color}">{right}</tspan>'
-    else:
-        body = f'<tspan fill="{color}">{left}{right}</tspan>'
-    if i == len(TERMINAL) - 1:
-        body += '<tspan class="cur" fill="#00FF41"> ▌</tspan>'
-    term_lines.append(f'<text class="term" x="44" y="{62 + i * 29}">{body}</text>')
 
-svg = f"""<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" role="img" aria-label="Операторская: цифровой дождь и терминал Zion">
+TERMINAL_EN = [
+    ("link@nebuchadnezzar:~$", " ./operator --connect", "#C9D1D9"),
+    ("&gt; ship:", " Nebuchadnezzar — Mark III, No. 11", "#00FF41"),
+    ("&gt; uplink:", " Zion · link stable", "#00FF41"),
+    ("&gt; the matrix has you", "", "#00FF41"),
+    ("&gt; follow the white rabbit 🐇", "", "#00FF41"),
+]
+
+svg = f"""<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" role="img" aria-label="Operator bay: Matrix digital rain and Zion terminal">
 <style>
   .rain {{ animation-name: fall; animation-timing-function: linear; animation-iteration-count: infinite; fill: #00FF41; font-family: Menlo, Consolas, monospace; }}
   @keyframes fall {{ from {{ transform: translateY(0); }} to {{ transform: translateY({26 * 17 + 230 + 40}px); }} }}
@@ -58,7 +74,10 @@ svg = f"""<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewB
 {''.join(rain)}
 <rect x="16" y="16" width="{W - 32}" height="{H - 32}" rx="10" fill="#000000" opacity="0.82" stroke="#00FF41" stroke-opacity="0.45" stroke-width="1.5"/>
 <circle cx="36" cy="36" r="5" fill="#00FF41" opacity="0.9"/>
-{''.join(term_lines)}
+<switch>
+  <g systemLanguage="ru">{terminal_group(TERMINAL_RU)}</g>
+  <g>{terminal_group(TERMINAL_EN)}</g>
+</switch>
 </svg>
 """
 
